@@ -1,0 +1,13 @@
+Package: layoutEngineExpress
+Type: Package
+Title: Render HTML Using a Browser
+Version: 0.1-0
+Authors@R: c(person("Kane", "Cullimore", 
+                    role=c("aut", "cre"),
+                    email="kane@ia.house"))
+Description: A "backend" package for 'layoutEngine' that is based on an Express.js server.
+Depends: layoutEngine (>= 0.2-0)
+Imports: websocket, httpuv, jsonlite, xml2
+Suggests: gyre, xtable
+SystemRequirements: fontforge
+License: GPL-3
