@@ -1,4 +1,29 @@
 
+# Wait up to 5 seconds for websocket connection to be open.
+poll_until_connected <- function(ws, timeout = 5) {
+  connected <- FALSE
+  end <- Sys.time() + timeout
+  while (!connected && Sys.time() < end) {
+    # Need to run the event loop for websocket to complete connection.
+    later::run_now(0.1)
+    
+    ready_state <- ws$readyState()
+    if (ready_state == 0L) {
+      # 0 means we're still trying to connect.
+      # For debugging, indicate how many times we've done this.
+      cat(".")         
+    } else if (ready_state == 1L) {
+      connected <- TRUE
+    } else {
+      break
+    }
+  }
+
+  if (!connected) {
+    stop("Unable to establish websocket connection.")
+  }
+}
+
 wsStatus <- function(WS) {
     container_info <- WS$container$getInfo()
     if (!container_info$running) {
@@ -22,9 +47,9 @@ wsOpen <- function(settings) {
                                    autoConnect=FALSE,
                                    maxMessageSize=1e6)
     
-    ws$onOpen(function(){
-        message("Websocket connection opened.")
-    })
+    ## ws$onOpen(function() {
+    ##     message("Websocket connection opened.")
+    ## })
     ## Define onMessage behavior
     ws$onMessage(function(event) {
         msg <- invisible(jsonlite::fromJSON(event$data))
@@ -32,15 +57,17 @@ wsOpen <- function(settings) {
         if (msg$event == "receipt") {            
             options(layoutEngine.wsID=msg$id)    
         } else if (msg$event == "message") {
-            options(layoutEngine.wsMessage=msg$message)            
+            options(layoutEngine.wsMessage=msg$message)
         }
     })
 
-    ws$onClose(function() {
-        message("Websocket connection to Express server closed.")
-    })
+
+    ## ws$onClose(function() {
+    ##     message("Websocket connection to Express server closed.")
+    ## })
 
     ws$connect()
+    poll_until_connected(ws)
     
     list(ws=ws, container=container, dir=container_info$dir)
 }

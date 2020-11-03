@@ -12,7 +12,7 @@ ExpressLayout <- function(html, width, height, fonts, device) {
     } else {
         WSS <- global_WSS
     }
-    
+
     ## Define remote driver pointer
     ws <- WSS$ws
     ## Define working directory
@@ -30,7 +30,7 @@ ExpressLayout <- function(html, width, height, fonts, device) {
             system2(fontforge,
                     args=c("-quiet", "-lang=ff", "-script",
                            system.file("FF", "pf2ttf",
-                                       package="layoutEngineRSelenium"),
+                                       package="layoutEngineExpress"),
                            " ", file.path(asset_dir, basename(i))
                            ), stderr=FALSE)
         }}
@@ -44,10 +44,12 @@ ExpressLayout <- function(html, width, height, fonts, device) {
                  paste0("width: ", as.character(width*dpi), "px; ",
                         "height: ", as.character(height*dpi), "px;"))
 
-    ## divide components for transport via WebSocket
-    new_body <- paste(xml_find_first(html$doc, "body"), collapse="")
-    new_head <- paste(xml_find_first(html$doc, "head"), collapse="")
-    data <- as.character(jsonlite::toJSON(list(head=new_head, body=new_body)))
+    ## divide components into head and body for transport via WebSocket
+    ## Update asset directory for font files to match asset_dir
+    tmp_head <- paste(xml_children(xml_find_first(html$doc, "head")), collapse="")
+    new_head <- gsub("assets", "src/assets", tmp_head)
+    new_body <- paste(xml_children(xml_find_first(html$doc, "body")), collapse="")    
+    data <- as.character(jsonlite::toJSON(data.frame(head=new_head, body=new_body)))
     browser()
     ## Send HTML to browser via WebSocket connection
     ws$send(data)
